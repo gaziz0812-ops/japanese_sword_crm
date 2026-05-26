@@ -14,7 +14,7 @@ from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
-ENV_FILE = BASE_DIR / '.env'
+ENV_FILE = BASE_DIR.parent / ".env"
 
 
 def load_env_file(path):
@@ -52,12 +52,12 @@ load_env_file(ENV_FILE)
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-xp-dys=$4gq07fi^-rfdsqwt%mzd(!2lg491dlj#hn6h5^mfh('
+SECRET_KEY = os.environ["DJANGO_SECRET_KEY"]
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = env_bool("DJANGO_DEBUG", default=False)
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = env_list("DJANGO_ALLOWED_HOSTS")
 
 
 # Application definition
