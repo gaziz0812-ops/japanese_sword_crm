@@ -18,7 +18,7 @@ class Product(models.Model):
 
     # строковое отображение из выпадающего списка который будет ссылаться на продукт
     def __str__(self):
-        return f"{self.sku} - {self.name}"
+        return f"{self.sku} - {self.name} {self.sale_price} ₽"
 
     @property  # декоратор превращающий метод в атрибут
     def stock_balance(self):
