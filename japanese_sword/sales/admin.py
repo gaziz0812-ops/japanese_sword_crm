@@ -22,6 +22,17 @@ class SaleAdmin(admin.ModelAdmin):
     list_filter = ('created_at',)
     search_fields = ('product__sku', 'product__name', 'customer__username')
     readonly_fields = ('unit_sale_price', 'total_sale_amount', 'profit', 'created_at')
+    fieldsets = (
+        ('Продажа', {
+            'fields': ('product', 'customer', 'quantity', 'discount_percent', 'cost_price', 'comment'),
+        }),
+        ('Расчёт', {
+            'fields': ('unit_sale_price', 'total_sale_amount', 'profit'),
+        }),
+        ('Служебные данные', {
+            'fields': ('created_at',),
+        }),
+    )
 
     class Media:
         js = ('sales/admin_sale_calculator.js',)

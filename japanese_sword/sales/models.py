@@ -10,6 +10,7 @@ class Sale(models.Model):
         'products.Product',
         on_delete=models.PROTECT,
         related_name='sales',
+        verbose_name='Товар',
     )
     customer = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -17,19 +18,25 @@ class Sale(models.Model):
         null=True,
         blank=True,
         related_name='sales',
+        verbose_name='Покупатель',
     )
-    quantity = models.PositiveIntegerField()
+    quantity = models.PositiveIntegerField('Количество')
     discount_percent = models.DecimalField(
+        'Скидка, %',
         max_digits=5,
         decimal_places=2,
         default=Decimal('0.00'),
     )
-    unit_sale_price = models.DecimalField(max_digits=10, decimal_places=2, editable=False)
-    total_sale_amount = models.DecimalField(max_digits=10, decimal_places=2, editable=False)
-    cost_price = models.DecimalField(max_digits=10, decimal_places=2)
-    profit = models.DecimalField(max_digits=10, decimal_places=2, editable=False)
-    comment = models.TextField(blank=True)
-    created_at = models.DateTimeField(auto_now_add=True)
+    unit_sale_price = models.DecimalField('Цена за 1 шт. со скидкой', max_digits=10, decimal_places=2, editable=False)
+    total_sale_amount = models.DecimalField('Сумма продажи', max_digits=10, decimal_places=2, editable=False)
+    cost_price = models.DecimalField('Себестоимость за 1 шт.', max_digits=10, decimal_places=2)
+    profit = models.DecimalField('Прибыль', max_digits=10, decimal_places=2, editable=False)
+    comment = models.TextField('Комментарий', blank=True)
+    created_at = models.DateTimeField('Создано', auto_now_add=True)
+
+    class Meta:
+        verbose_name = 'Продажа'
+        verbose_name_plural = 'Продажи'
 
     def save(self, *args, **kwargs):
         discount_multiplier = Decimal('1.00') - (self.discount_percent / Decimal('100.00'))
@@ -56,4 +63,4 @@ class Sale(models.Model):
         )
 
     def __str__(self):
-        return f'Sale #{self.pk} - {self.product}'
+        return f'Продажа #{self.pk} - {self.product}'

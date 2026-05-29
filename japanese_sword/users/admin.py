@@ -9,5 +9,5 @@ class CustomUserAdmin(UserAdmin):
     list_display = ('id', 'username', 'email', 'role', 'telegram_id', 'is_staff', 'is_active')
     list_filter = ('role', 'is_staff', 'is_active')
     fieldsets = UserAdmin.fieldsets + (
-        ('Telegram data', {'fields': ('telegram_id', 'role')}),
+        ('Telegram и роль', {'fields': ('telegram_id', 'role')}),
     )
