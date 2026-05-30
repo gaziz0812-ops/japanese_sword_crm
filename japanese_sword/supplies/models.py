@@ -94,9 +94,11 @@ class SupplyItem(models.Model):
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
         self.sync_stock_movement()
+        self.sync_stock_batch()
 
     def delete(self, *args, **kwargs):
         self.delete_stock_movement()
+        self.delete_stock_batch()
         super().delete(*args, **kwargs)
 
     def sync_stock_movement(self):
@@ -116,6 +118,29 @@ class SupplyItem(models.Model):
         from stock.models import StockMovement
 
         StockMovement.objects.filter(
+            source_type='supply_item',
+            source_id=self.pk,
+        ).delete()
+
+
+    def sync_stock_batch(self):
+        from stock.models import StockBatch
+
+        StockBatch.objects.update_or_create(
+            source_type='supply_item',
+            source_id=self.pk,
+            defaults={
+                'product': self.product,
+                'quantity': self.quantity,
+                'remaining_quantity': self.quantity,
+                'unit_cost': self.calculated_unit_cost,
+            }
+        )
+
+    def delete_stock_batch(self):
+        from stock.models import StockBatch
+
+        StockBatch.objects.filter(
             source_type='supply_item',
             source_id=self.pk,
         ).delete()
@@ -164,9 +189,11 @@ class ManualSupplyItem(models.Model):
         self.total_cost = self.unit_cost * self.quantity
         super().save(*args, **kwargs)
         self.sync_stock_movement()
+        self.sync_stock_batch()
 
     def delete(self, *args, **kwargs):
         self.delete_stock_movement()
+        self.delete_stock_batch()
         super().delete(*args, **kwargs)
 
     def sync_stock_movement(self):
@@ -186,6 +213,29 @@ class ManualSupplyItem(models.Model):
         from stock.models import StockMovement
 
         StockMovement.objects.filter(
+            source_type='manual_supply_item',
+            source_id=self.pk,
+        ).delete()
+
+
+    def sync_stock_batch(self):
+        from stock.models import StockBatch
+
+        StockBatch.objects.update_or_create(
+            source_type='manual_supply_item',
+            source_id=self.pk,
+            defaults={
+                'product': self.product,
+                'quantity': self.quantity,
+                'remaining_quantity': self.quantity,
+                'unit_cost': self.unit_cost,
+            },
+        )
+
+    def delete_stock_batch(self):
+        from stock.models import StockBatch
+
+        StockBatch.objects.filter(
             source_type='manual_supply_item',
             source_id=self.pk,
         ).delete()
