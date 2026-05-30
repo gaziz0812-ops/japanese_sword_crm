@@ -48,11 +48,11 @@
         }
 
         preview.innerHTML = [
-            '<strong>Base price:</strong> ' + formatMoney(basePrice),
-            '<strong>Discount:</strong> ' + formatMoney(discountValue) + '%',
-            '<strong>Price after discount:</strong> ' + formatMoney(unitSalePrice),
-            '<strong>Total sale amount:</strong> ' + formatMoney(totalSaleAmount),
-            '<strong>Profit:</strong> ' + formatMoney(profit)
+            '<strong>Начальная цена:</strong> ' + formatMoney(basePrice),
+            '<strong>Скидка:</strong> ' + formatMoney(discountValue) + '%',
+            '<strong>Цена с учетом скидки:</strong> ' + formatMoney(unitSalePrice),
+            '<strong>Цена продажи:</strong> ' + formatMoney(totalSaleAmount),
+            '<strong>Профит:</strong> ' + formatMoney(profit)
         ].join('<br>');
     }
 

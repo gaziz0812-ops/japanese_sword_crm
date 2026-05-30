@@ -96,3 +96,47 @@ class SupplyItem(models.Model):
 
     def __str__(self):
         return f'{self.product} x {self.quantity}'
+
+
+class ManualSupply(models.Model):
+    supply_date = models.DateField('Дата поставки')
+    comment = models.TextField('Комментарий', blank=True)
+    created_at = models.DateTimeField('Создано', auto_now_add=True)
+
+    class Meta:
+        verbose_name = 'Ручная поставка'
+        verbose_name_plural = 'Ручные поставки'
+
+    def __str__(self):
+        return f'Ручная поставка #{self.pk} - {self.supply_date}'
+
+
+class ManualSupplyItem(models.Model):
+    supply = models.ForeignKey(
+        ManualSupply,
+        on_delete=models.CASCADE,
+        related_name='items',
+        verbose_name='Ручная поставка',
+    )
+    product = models.ForeignKey(
+        'products.Product',
+        on_delete=models.PROTECT,
+        related_name='manual_supply_items',
+        verbose_name='Товар',
+    )
+    quantity = models.PositiveIntegerField('Количество')
+    unit_cost = models.DecimalField('Себестоимость 1 шт., руб.', max_digits=12, decimal_places=2)
+    cost_note = models.TextField('Примечание к себестоимости', blank=True)
+    total_cost = models.DecimalField('Итоговая себестоимость, руб.', max_digits=12, decimal_places=2,
+                                     editable=False, default=Decimal('0.00'))
+
+    class Meta:
+        verbose_name = 'Ручная позиция поставки'
+        verbose_name_plural = 'Ручные позиции поставки'
+
+    def save(self, *args, **kwargs):
+        self.total_cost = self.unit_cost * self.quantity
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f'{self.product} x {self.quantity}'

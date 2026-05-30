@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Supply, SupplyItem
+from .models import ManualSupply, ManualSupplyItem, Supply, SupplyItem
 
 
 class SupplyItemInline(admin.TabularInline):
@@ -13,6 +13,13 @@ class SupplyItemInline(admin.TabularInline):
         'allocated_shipping_cost',
         'calculated_unit_cost',
     )
+
+class ManualSupplyItemInline(admin.TabularInline):
+    model = ManualSupplyItem
+    verbose_name = 'Ручная позиция поставки'
+    verbose_name_plural = 'Ручные позиции поставки'
+    extra = 1
+    readonly_fields = ('total_cost',)
 
 
 @admin.register(Supply)
@@ -45,30 +52,19 @@ class SupplyAdmin(admin.ModelAdmin):
     )
 
 
-@admin.register(SupplyItem)
-class SupplyItemAdmin(admin.ModelAdmin):
+@admin.register(ManualSupply)
+class ManualSupplyAdmin(admin.ModelAdmin):
     list_display = (
         'id',
-        'supply',
-        'product',
-        'quantity',
-        'price_yuan',
-        'china_shipping_yuan',
-        'unit_weight',
-        'calculated_unit_cost',
+        'supply_date',
+        'comment',
+        'created_at',
     )
-    list_filter = ('supply', 'product')
-    search_fields = ('product__sku', 'product__name')
-    readonly_fields = (
-        'product_cost_rub',
-        'allocated_shipping_cost',
-        'calculated_unit_cost',
-    )
+    list_filter = ('supply_date',)
+    search_fields = ('comment',)
+    inlines = (ManualSupplyItemInline,)
     fieldsets = (
-        ('Позиция поставки', {
-            'fields': ('supply', 'product', 'quantity', 'price_yuan', 'china_shipping_yuan', 'unit_weight'),
-        }),
-        ('Расчёт', {
-            'fields': ('product_cost_rub', 'allocated_shipping_cost', 'calculated_unit_cost'),
+        ('Ручная поставка', {
+            'fields': ('supply_date', 'comment'),
         }),
     )
