@@ -1,5 +1,6 @@
 from decimal import Decimal
 
+from django.core.exceptions import ValidationError
 from django.db import models
 
 
@@ -92,11 +93,15 @@ class SupplyItem(models.Model):
         return f'{self.product} x {self.quantity}'
 
     def save(self, *args, **kwargs):
+        if self.pk:
+            self.ensure_stock_batch_is_not_used()
+
         super().save(*args, **kwargs)
         self.sync_stock_movement()
         self.sync_stock_batch()
 
     def delete(self, *args, **kwargs):
+        self.ensure_stock_batch_is_not_used()
         self.delete_stock_movement()
         self.delete_stock_batch()
         super().delete(*args, **kwargs)
@@ -145,6 +150,22 @@ class SupplyItem(models.Model):
             source_id=self.pk,
         ).delete()
 
+    def get_stock_batch(self):
+        from stock.models import StockBatch
+
+        return StockBatch.objects.filter(
+            source_type='supply_item',
+            source_id=self.pk,
+        ).first()
+
+    def ensure_stock_batch_is_not_used(self):
+        batch = self.get_stock_batch()
+
+        if batch and batch.sale_allocations.exists():
+            raise ValidationError(
+                'Эту позицию поставки нельзя изменить или удалить, потому что ее партия уже участвовала в продаже.'
+            )
+
 
 class ManualSupply(models.Model):
     supply_date = models.DateField('Дата поставки')
@@ -186,12 +207,16 @@ class ManualSupplyItem(models.Model):
         return f'{self.product} x {self.quantity}'
 
     def save(self, *args, **kwargs):
+        if self.pk:
+            self.ensure_stock_batch_is_not_used()
+
         self.total_cost = self.unit_cost * self.quantity
         super().save(*args, **kwargs)
         self.sync_stock_movement()
         self.sync_stock_batch()
 
     def delete(self, *args, **kwargs):
+        self.ensure_stock_batch_is_not_used()
         self.delete_stock_movement()
         self.delete_stock_batch()
         super().delete(*args, **kwargs)
@@ -239,3 +264,19 @@ class ManualSupplyItem(models.Model):
             source_type='manual_supply_item',
             source_id=self.pk,
         ).delete()
+
+    def get_stock_batch(self):
+        from stock.models import StockBatch
+
+        return StockBatch.objects.filter(
+            source_type='manual_supply_item',
+            source_id=self.pk,
+        ).first()
+
+    def ensure_stock_batch_is_not_used(self):
+        batch = self.get_stock_batch()
+
+        if batch and batch.sale_allocations.exists():
+            raise ValidationError(
+                'Эту позицию ручной поставки нельзя изменить или удалить, потому что ее партия уже участвовала в продаже.'
+            )
