@@ -1,4 +1,6 @@
 from django.contrib import admin
+from django import forms
+from django.db import models
 
 from .models import ManualSupply, ManualSupplyItem, Supply, SupplyItem
 
@@ -20,6 +22,11 @@ class ManualSupplyItemInline(admin.TabularInline):
     verbose_name_plural = 'Ручные позиции поставки'
     extra = 1
     readonly_fields = ('total_cost',)
+    formfield_overrides = {
+        models.TextField: {
+            'widget': forms.Textarea(attrs={'rows': 2, 'cols': 30}),
+        },
+    }
 
 
 @admin.register(Supply)
