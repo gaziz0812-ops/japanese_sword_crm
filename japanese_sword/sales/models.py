@@ -29,7 +29,13 @@ class Sale(models.Model):
     )
     unit_sale_price = models.DecimalField('Цена за 1 шт. со скидкой', max_digits=10, decimal_places=2, editable=False)
     total_sale_amount = models.DecimalField('Сумма продажи', max_digits=10, decimal_places=2, editable=False)
-    cost_price = models.DecimalField('Себестоимость за 1 шт.', max_digits=10, decimal_places=2)
+    cost_price = models.DecimalField(
+        'Себестоимость за 1 шт.',
+        max_digits=10,
+        decimal_places=2,
+        editable=False,
+        default=Decimal('0.00'),
+    )
     profit = models.DecimalField('Прибыль', max_digits=10, decimal_places=2, editable=False)
     comment = models.TextField('Комментарий', blank=True)
     created_at = models.DateTimeField('Создано', auto_now_add=True)
@@ -43,11 +49,69 @@ class Sale(models.Model):
 
         self.unit_sale_price = self.product.sale_price * discount_multiplier
         self.total_sale_amount = self.unit_sale_price * self.quantity
-        self.profit = self.total_sale_amount - (self.cost_price * self.quantity)
+        self.cost_price = Decimal('0.00')
+        self.profit = Decimal('0.00')
 
         with transaction.atomic():
             super().save(*args, **kwargs)
+            total_cost = self.sync_cost_allocations()
+            self.cost_price = total_cost / self.quantity
+            self.profit = self.total_sale_amount - total_cost
+            super().save(update_fields=['cost_price', 'profit'])
             self.sync_stock_movement()
+
+    def delete(self, *args, **kwargs):
+        with transaction.atomic():
+            self.restore_cost_allocations()
+            self.delete_stock_movement()
+            super().delete(*args, **kwargs)
+
+    def sync_cost_allocations(self):
+        from stock.models import StockBatch
+
+        self.restore_cost_allocations()
+
+        remaining_quantity = self.quantity
+        total_cost = Decimal('0.00')
+        batches = StockBatch.objects.select_for_update().filter(
+            product=self.product,
+            remaining_quantity__gt=0,
+        ).order_by('created_at', 'id')
+
+        for batch in batches:
+            if remaining_quantity <= 0:
+                break
+
+            quantity_from_batch = min(batch.remaining_quantity, remaining_quantity)
+            batch.remaining_quantity -= quantity_from_batch
+            batch.save(update_fields=['remaining_quantity'])
+
+            allocation = SaleCostAllocation.objects.create(
+                sale=self,
+                stock_batch=batch,
+                quantity=quantity_from_batch,
+                unit_cost=batch.unit_cost,
+            )
+            total_cost += allocation.total_cost
+            remaining_quantity -= quantity_from_batch
+
+        if remaining_quantity > 0:
+            raise ValidationError({
+                'quantity': 'Недостаточно товара в партиях для FIFO-списания.'
+            })
+
+        return total_cost
+
+    def restore_cost_allocations(self):
+        from stock.models import StockBatch
+
+        allocations = self.cost_allocations.select_related('stock_batch')
+        for allocation in allocations:
+            batch = StockBatch.objects.select_for_update().get(pk=allocation.stock_batch_id)
+            batch.remaining_quantity += allocation.quantity
+            batch.save(update_fields=['remaining_quantity'])
+
+        allocations.delete()
 
     def sync_stock_movement(self):
         from stock.models import StockMovement
@@ -61,6 +125,14 @@ class Sale(models.Model):
                 'quantity': self.quantity,
             },
         )
+
+    def delete_stock_movement(self):
+        from stock.models import StockMovement
+
+        StockMovement.objects.filter(
+            source_type='sale',
+            source_id=self.pk,
+        ).delete()
 
     def __str__(self):
         return f'Продажа #{self.pk} - {self.product}'

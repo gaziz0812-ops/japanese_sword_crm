@@ -41,7 +41,7 @@
         return preview;
     }
 
-    function setPreview(basePrice, stockBalance, discountValue, unitSalePrice, totalSaleAmount, profit) {
+    function setPreview(basePrice, stockBalance, discountValue, unitSalePrice, totalSaleAmount) {
         var preview = ensurePreview();
         if (!preview) {
             return;
@@ -52,8 +52,7 @@
             '<strong>Остаток:</strong> ' + stockBalance,
             '<strong>Скидка:</strong> ' + formatMoney(discountValue) + '%',
             '<strong>Цена с учетом скидки:</strong> ' + formatMoney(unitSalePrice),
-            '<strong>Цена продажи:</strong> ' + formatMoney(totalSaleAmount),
-            '<strong>Профит:</strong> ' + formatMoney(profit)
+            '<strong>Цена продажи:</strong> ' + formatMoney(totalSaleAmount)
         ].join('<br>');
     }
 
@@ -61,9 +60,8 @@
         var product = document.getElementById('id_product');
         var quantity = document.getElementById('id_quantity');
         var discount = document.getElementById('id_discount_percent');
-        var costPrice = document.getElementById('id_cost_price');
 
-        if (!product || !quantity || !discount || !costPrice) {
+        if (!product || !quantity || !discount) {
             return;
         }
 
@@ -72,21 +70,18 @@
         var stockBalance = selectedOption ? selectedOption.dataset.stockBalance || '0' : '0';
         var quantityValue = parseNumber(quantity.value);
         var discountValue = parseNumber(discount.value);
-        var costPriceValue = parseNumber(costPrice.value);
 
         var discountMultiplier = 1 - (discountValue / 100);
         var unitSalePrice = basePrice * discountMultiplier;
         var totalSaleAmount = unitSalePrice * quantityValue;
-        var profit = totalSaleAmount - (costPriceValue * quantityValue);
 
         setReadonlyField('unit_sale_price', formatMoney(unitSalePrice));
         setReadonlyField('total_sale_amount', formatMoney(totalSaleAmount));
-        setReadonlyField('profit', formatMoney(profit));
-        setPreview(basePrice, stockBalance, discountValue, unitSalePrice, totalSaleAmount, profit);
+        setPreview(basePrice, stockBalance, discountValue, unitSalePrice, totalSaleAmount);
     }
 
     document.addEventListener('DOMContentLoaded', function () {
-        ['id_product', 'id_quantity', 'id_discount_percent', 'id_cost_price'].forEach(function (id) {
+        ['id_product', 'id_quantity', 'id_discount_percent'].forEach(function (id) {
             var field = document.getElementById(id);
 
             if (field) {
