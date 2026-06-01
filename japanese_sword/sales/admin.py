@@ -8,11 +8,12 @@ from .models import Sale, SaleCostAllocation, SaleReturn
 
 class SaleCostAllocationInline(admin.TabularInline):
     model = SaleCostAllocation
-    verbose_name = 'Списание себестоимости'
-    verbose_name_plural = 'Списания себестоимости'
+    verbose_name = 'Партия продажи'
+    verbose_name_plural = 'Партии продажи'
     extra = 0
     can_delete = False
-    readonly_fields = ('stock_batch', 'quantity', 'unit_cost', 'total_cost', 'created_at')
+    fields = ('stock_batch', 'quantity')
+    readonly_fields = ('stock_batch', 'quantity')
 
     def has_add_permission(self, request, obj=None):
         return False
@@ -22,7 +23,7 @@ class SaleCostAllocationInline(admin.TabularInline):
 class SaleAdmin(admin.ModelAdmin):
     form = SaleAdminForm
     list_display = (
-        'id',
+        'display_order_number',
         'product',
         'customer',
         'quantity',
@@ -51,6 +52,10 @@ class SaleAdmin(admin.ModelAdmin):
 
     class Media:
         js = ('sales/admin_sale_calculator.js',)
+
+    @admin.display(description='Номер заказа', ordering='id')
+    def display_order_number(self, obj):
+        return obj.id
 
     def has_delete_permission(self, request, obj=None):
         return False

@@ -12,7 +12,7 @@ class Product(models.Model):
         verbose_name='Производитель',
     )
     description = models.TextField('Описание', blank=True)
-    sale_price = models.DecimalField('Цена продажи, руб.', max_digits=10, decimal_places=2)
+    sale_price = models.DecimalField('Цена, руб.', max_digits=10, decimal_places=2)
     is_active = models.BooleanField('Активен', default=True)
 
     class Meta:
@@ -20,7 +20,7 @@ class Product(models.Model):
         verbose_name_plural = 'Товары'
 
     def __str__(self):
-        return f'{self.sku} - {self.name} ({self.sale_price} руб.)'
+        return f'Арт.{self.sku} - {self.name}'
 
     @property
     def stock_balance(self):

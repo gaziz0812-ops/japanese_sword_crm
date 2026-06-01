@@ -43,6 +43,17 @@ class StockMovementAdmin(admin.ModelAdmin):
         'source_id',
         'created_at',
     )
+    fieldsets = (
+        ('Движение', {
+            'fields': ('product', 'movement_type', 'quantity'),
+        }),
+        ('Источник', {
+            'fields': ('display_source_type', 'source_id'),
+        }),
+        ('Служебные данные', {
+            'fields': ('created_at',),
+        }),
+    )
 
     @admin.display(description='Тип источника')
     def display_source_type(self, obj):
@@ -81,6 +92,17 @@ class StockBatchAdmin(admin.ModelAdmin):
         'source_id',
         'created_at',
     )
+    fieldsets = (
+        ('Партия', {
+            'fields': ('product', 'quantity', 'remaining_quantity', 'unit_cost'),
+        }),
+        ('Источник', {
+            'fields': ('display_source_type', 'source_id'),
+        }),
+        ('Служебные данные', {
+            'fields': ('created_at',),
+        }),
+    )
 
     @admin.display(description='Тип источника')
     def display_source_type(self, obj):
@@ -102,7 +124,8 @@ class StockWriteOffAllocationInline(admin.TabularInline):
     verbose_name_plural = 'Списания из партий'
     extra = 0
     can_delete = False
-    readonly_fields = ('stock_batch', 'quantity', 'unit_cost', 'total_cost', 'created_at')
+    fields = ('stock_batch', 'quantity')
+    readonly_fields = ('stock_batch', 'quantity')
 
     def has_add_permission(self, request, obj=None):
         return False

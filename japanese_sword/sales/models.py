@@ -136,7 +136,7 @@ class Sale(models.Model):
         ).delete()
 
     def __str__(self):
-        return f'Продажа #{self.pk} - {self.product}'
+        return f'Заказ #{self.pk} - {self.product}'
 
     def clean(self):
         super().clean()
@@ -311,4 +311,4 @@ class SaleReturn(models.Model):
         ).delete()
 
     def __str__(self):
-        return f'Возврат #{self.pk} по продаже #{self.sale_id}'
+        return f'Возврат #{self.pk} по заказу #{self.sale_id}'
