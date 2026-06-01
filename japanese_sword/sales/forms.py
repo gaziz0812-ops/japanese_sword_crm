@@ -34,7 +34,10 @@ class SaleAdminForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        product_field = self.fields['product']
+        product_field = self.fields.get('product')
+        if not product_field:
+            return
+
         product_field.widget.price_map = {
             str(product.pk): str(product.sale_price)
             for product in product_field.queryset
