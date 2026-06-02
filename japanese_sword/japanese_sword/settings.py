@@ -70,12 +70,15 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+
+    'rest_framework',
+
     'manufacturers',
     'products',
     'stock',
     'supplies',
     'sales',
-    'users'
+    'users',
 ]
 
 AUTH_USER_MODEL = 'users.User'  # Используется кастомная модель user из соответствующего приложения

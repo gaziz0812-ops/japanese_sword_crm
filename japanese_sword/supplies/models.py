@@ -23,23 +23,22 @@ class Supply(models.Model):
             allocated_shipping_cost = item_package_weight * shipping_price_per_kg
 
             product_cost_rub = (
-                (item.price_yuan * item.quantity + item.china_shipping_yuan)
-                * commission_multiplier
-                * self.yuan_rate
+                    (item.price_yuan * item.quantity + item.china_shipping_yuan)
+                    * commission_multiplier
+                    * self.yuan_rate
             )
 
             item.product_cost_rub = product_cost_rub
             item.allocated_shipping_cost = allocated_shipping_cost
             item.calculated_unit_cost = (
-                product_cost_rub + allocated_shipping_cost
-            ) / item.quantity
+                                                product_cost_rub + allocated_shipping_cost
+                                        ) / item.quantity
 
             item.save(update_fields=[
                 'product_cost_rub',
                 'allocated_shipping_cost',
                 'calculated_unit_cost',
             ])
-
 
     supply_date = models.DateField('Дата поставки')
     yuan_rate = models.DecimalField('Курс юаня', max_digits=10, decimal_places=4)
@@ -56,7 +55,7 @@ class Supply(models.Model):
     created_at = models.DateTimeField('Создано', auto_now_add=True)
 
     class Meta:
-        verbose_name = 'Поставка'
+        verbose_name = 'Поставку'
         verbose_name_plural = 'Поставки'
 
     def __str__(self):
@@ -81,9 +80,12 @@ class SupplyItem(models.Model):
     china_shipping_yuan = models.DecimalField('Доставка по Китаю, юань', max_digits=10, decimal_places=2)
     unit_weight = models.DecimalField('Вес 1 шт., кг', max_digits=10, decimal_places=3)
 
-    product_cost_rub = models.DecimalField('Цена товара, руб.', max_digits=12, decimal_places=2, editable=False, default=Decimal('0.00'))
-    allocated_shipping_cost = models.DecimalField('Доставка позиции, руб.', max_digits=12, decimal_places=2, editable=False, default=Decimal('0.00'))
-    calculated_unit_cost = models.DecimalField('Себестоимость 1 шт., руб.', max_digits=12, decimal_places=2, editable=False, default=Decimal('0.00'))
+    product_cost_rub = models.DecimalField('Цена товара, руб.', max_digits=12, decimal_places=2,
+                                           editable=False, default=Decimal('0.00'))
+    allocated_shipping_cost = models.DecimalField('Доставка позиции, руб.', max_digits=12, decimal_places=2,
+                                                  editable=False, default=Decimal('0.00'))
+    calculated_unit_cost = models.DecimalField('Себестоимость 1 шт., руб.', max_digits=12, decimal_places=2,
+                                               editable=False, default=Decimal('0.00'))
 
     class Meta:
         verbose_name = 'Позиция поставки'
@@ -126,7 +128,6 @@ class SupplyItem(models.Model):
             source_type='supply_item',
             source_id=self.pk,
         ).delete()
-
 
     def sync_stock_batch(self):
         from stock.models import StockBatch
@@ -241,7 +242,6 @@ class ManualSupplyItem(models.Model):
             source_type='manual_supply_item',
             source_id=self.pk,
         ).delete()
-
 
     def sync_stock_batch(self):
         from stock.models import StockBatch

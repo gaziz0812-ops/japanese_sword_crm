@@ -42,7 +42,7 @@ class Sale(models.Model):
     created_at = models.DateTimeField('Создано', auto_now_add=True)
 
     class Meta:
-        verbose_name = 'Продажа'
+        verbose_name = 'Продажу'
         verbose_name_plural = 'Продажи'
 
     def save(self, *args, **kwargs):
@@ -146,11 +146,11 @@ class Sale(models.Model):
 
             if self.pk:
                 current_sale_quantity = (
-                    Sale.objects
-                    .filter(pk=self.pk)
-                    .values_list('quantity', flat=True)
-                    .first()
-                ) or 0
+                                            Sale.objects
+                                            .filter(pk=self.pk)
+                                            .values_list('quantity', flat=True)
+                                            .first()
+                                        ) or 0
 
                 available_quantity += current_sale_quantity
 
@@ -223,11 +223,11 @@ class SaleReturn(models.Model):
 
             if self.pk:
                 current_return_quantity = (
-                    SaleReturn.objects
-                    .filter(pk=self.pk)
-                    .values_list('quantity', flat=True)
-                    .first()
-                ) or 0
+                                              SaleReturn.objects
+                                              .filter(pk=self.pk)
+                                              .values_list('quantity', flat=True)
+                                              .first()
+                                          ) or 0
 
                 available_quantity += current_return_quantity
 
@@ -238,11 +238,11 @@ class SaleReturn(models.Model):
 
     def get_available_quantity_to_return(self):
         already_returned_quantity = (
-            self.sale.returns
-            .exclude(pk=self.pk)
-            .aggregate(total=models.Sum('quantity'))
-            .get('total')
-        ) or 0
+                                        self.sale.returns
+                                        .exclude(pk=self.pk)
+                                        .aggregate(total=models.Sum('quantity'))
+                                        .get('total')
+                                    ) or 0
 
         return self.sale.quantity - already_returned_quantity
 

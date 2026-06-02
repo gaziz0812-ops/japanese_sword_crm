@@ -18,7 +18,7 @@ class User(AbstractUser):
     )
 
     class Meta:
-        verbose_name = 'Пользователь'
+        verbose_name = 'Пользователя'
         verbose_name_plural = 'Пользователи'
 
     def __str__(self):

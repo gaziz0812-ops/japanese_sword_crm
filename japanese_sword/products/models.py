@@ -3,7 +3,7 @@ from django.db.models import Sum
 
 
 class Product(models.Model):
-    sku = models.CharField('Артикул', max_length=64, unique=True)
+    sku = models.CharField('Артикул', max_length=15, unique=True)
     name = models.CharField('Название', max_length=255)
     manufacturer = models.ForeignKey(
         'manufacturers.Manufacturer',
