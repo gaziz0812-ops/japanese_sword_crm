@@ -19,6 +19,7 @@ class ProductSerializer(serializers.ModelSerializer):
             'name',
             'sale_price',
             'stock_status',
+            'image'
         )
 
     def get_stock_status(self, obj):

@@ -168,4 +168,10 @@ REST_FRAMEWORK = {
     'PAGE_SIZE': 20,
 }
 
+# MEDIA_URL — публичный URL-префикс, по которому браузер сможет запросить загруженный файл.
+MEDIA_URL = '/media/'
+
+# MEDIA_ROOT — папка на диске, куда Django будет сохранять загруженные файлы.
+MEDIA_ROOT = BASE_DIR / 'media'
+
 
