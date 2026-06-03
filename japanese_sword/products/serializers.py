@@ -4,8 +4,8 @@ from .models import Product
 
 
 class ProductSerializer(serializers.ModelSerializer):
-    # stock_balance не хранится в БД, а считается через @property в модели Product
-    stock_balance = serializers.IntegerField(read_only=True)
+    # Поле не хранится в БД, а считается методом get_stock_status()
+    stock_status = serializers.SerializerMethodField()
 
     class Meta:
         model = Product  # модель, с которой работает сериализатор
@@ -13,8 +13,15 @@ class ProductSerializer(serializers.ModelSerializer):
             'id',
             'sku',
             'name',
-            'manufacturer',
             'sale_price',
-            'is_active',
-            'stock_balance',
+            'stock_status',
         )
+
+    def get_stock_status(self, obj):
+        if obj.stock_balance > 1:
+            return "В наличии"
+
+        if obj.stock_balance == 1:
+            return "Осталась 1 шт."
+
+        return "Нет в наличии"

@@ -160,4 +160,12 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 
+REST_FRAMEWORK = {
+    # Специальная настройка DRF: класс пагинации по умолчанию
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+
+    # Специальная настройка DRF: сколько объектов отдавать на одной странице
+    'PAGE_SIZE': 20,
+}
+
 

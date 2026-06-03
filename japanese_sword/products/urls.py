@@ -5,7 +5,6 @@ from .views import ProductViewSet
 
 
 router = DefaultRouter()
-#
 router.register('', ProductViewSet, basename='product') # /api/products/ и /api/products/<id>
 
 
