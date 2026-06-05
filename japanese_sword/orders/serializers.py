@@ -31,6 +31,30 @@ class OrderItemCreateSerializer(serializers.Serializer):
         return attrs
 
 
+# Этот serializer описывает, как позиция заказа выглядит в JSON-ответе API.
+class OrderItemReadSerializer(serializers.ModelSerializer):
+    # source='product.sku' берет артикул из связанного товара OrderItem.product.
+    sku = serializers.CharField(source='product.sku', read_only=True)
+
+    # source='product.name' берет название из связанного товара OrderItem.product.
+    name = serializers.CharField(source='product.name', read_only=True)
+
+    class Meta:
+        # model связывает serializer с моделью OrderItem.
+        model = OrderItem
+
+        # fields перечисляет поля позиции заказа, которые клиент увидит в ответе API.
+        fields = (
+            'product',
+            'sku',
+            'name',
+            'quantity',
+            'unit_price',
+            'unit_price_after_discount',
+            'total_price',
+        )
+
+
 # Этот serializer принимает данные клиента и список товаров для создания Order.
 class OrderCreateSerializer(serializers.ModelSerializer):
     # items — вложенный список товаров внутри заказа.
@@ -86,4 +110,14 @@ class OrderCreateSerializer(serializers.ModelSerializer):
 
         return order
 
-    
+    def to_representation(self, instance):
+        # Сначала DRF собирает обычный JSON заказа через стандартную логику ModelSerializer.
+        representation = super().to_representation(instance)
+
+        # Для ответа API заменяем входной формат items на подробный формат позиций заказа.
+        representation['items'] = OrderItemReadSerializer(
+            instance.items.select_related('product'),
+            many=True,
+        ).data
+
+        return representation
