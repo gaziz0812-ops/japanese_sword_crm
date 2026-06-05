@@ -110,6 +110,7 @@ class OrderCreateSerializer(serializers.ModelSerializer):
 
         return order
 
+
     def to_representation(self, instance):
         # Сначала DRF собирает обычный JSON заказа через стандартную логику ModelSerializer.
         representation = super().to_representation(instance)
