@@ -8,6 +8,9 @@ urlpatterns = [
 
     # Подключаем публичный API каталога товаров.
     path('api/products/', include('products.urls')),
+
+    # Подключаем публичный API создания заказов
+    path('api/orders/', include('orders.urls')),
 ]
 
 # В режиме разработки Django сам раздает загруженные медиафайлы по MEDIA_URL.
