@@ -5,6 +5,7 @@ from products.models import Product
 
 from .notifications import send_new_order_notification
 from .models import Order, OrderItem
+from users.services import get_or_create_telegram_user
 
 
 # Этот serializer описывает одну товарную строку, которую клиент отправляет в заказ.
@@ -57,8 +58,13 @@ class OrderItemReadSerializer(serializers.ModelSerializer):
 
 # Этот serializer принимает данные клиента и список товаров для создания Order.
 class OrderCreateSerializer(serializers.ModelSerializer):
+    # telegram_user принимает данные пользователя Telegram из frontend, но не является полем модели Order.
+    telegram_user = serializers.DictField(write_only=True, required=False)
+
     # items — вложенный список товаров внутри заказа.
     items = OrderItemCreateSerializer(many=True)
+
+
 
     class Meta:
         # model связывает serializer с моделью Order.
@@ -69,6 +75,7 @@ class OrderCreateSerializer(serializers.ModelSerializer):
             'id',
             'customer_name',
             'telegram_username',
+            'telegram_user',
             'phone',
             'customer_comment',
             'total_amount',
@@ -91,11 +98,18 @@ class OrderCreateSerializer(serializers.ModelSerializer):
         return items
 
     def create(self, validated_data):
+        # Забираем Telegram-данные отдельно, потому что у модели Order нет поля telegram_user.
+        telegram_user_data = validated_data.pop('telegram_user', None)
+
         # Забираем вложенные товары отдельно, потому что Order не имеет обычного поля items.
         items_data = validated_data.pop('items')
 
         # atomic делает создание заказа и всех позиций одной транзакцией.
         with transaction.atomic():
+            # Если frontend прислал Telegram-данные, находим или создаем User и привязываем его к заказу.
+            if telegram_user_data:
+                validated_data['customer'] = get_or_create_telegram_user(telegram_user_data)
+
             order = Order.objects.create(**validated_data)
 
             for item_data in items_data:
