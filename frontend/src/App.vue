@@ -44,7 +44,56 @@ const canSubmitOrder = computed(() => {
   return cartItems.value.length > 0 && !isSubmitting.value
 })
 
-onMounted(loadProducts)
+onMounted(() => {
+  initializeTelegramWebApp()
+  fillTelegramCustomerFields()
+  loadProducts()
+})
+
+function getTelegramWebApp() {
+  if (typeof window === 'undefined') {
+    return null
+  }
+
+  return window.Telegram?.WebApp || null
+}
+
+function initializeTelegramWebApp() {
+  const webApp = getTelegramWebApp()
+
+  if (!webApp) {
+    return
+  }
+
+  webApp.ready()
+  webApp.expand()
+}
+
+function getTelegramInitData() {
+  return getTelegramWebApp()?.initData || ''
+}
+
+function getTelegramUser() {
+  return getTelegramWebApp()?.initDataUnsafe?.user || null
+}
+
+function fillTelegramCustomerFields() {
+  const telegramUser = getTelegramUser()
+
+  if (!telegramUser) {
+    return
+  }
+
+  const fullName = [telegramUser.first_name, telegramUser.last_name].filter(Boolean).join(' ')
+
+  if (fullName && !customerForm.customer_name) {
+    customerForm.customer_name = fullName
+  }
+
+  if (telegramUser.username && !customerForm.telegram_username) {
+    customerForm.telegram_username = `@${telegramUser.username}`
+  }
+}
 
 async function loadProducts() {
   isLoading.value = true
@@ -163,13 +212,21 @@ function formatMoney(value) {
 }
 
 function buildOrderPayload() {
-  return {
+  const payload = {
     ...customerForm,
     items: cartItems.value.map((item) => ({
       product: item.product.id,
       quantity: item.quantity,
     })),
   }
+
+  const telegramInitData = getTelegramInitData()
+
+  if (telegramInitData) {
+    payload.telegram_init_data = telegramInitData
+  }
+
+  return payload
 }
 
 async function submitOrder() {
