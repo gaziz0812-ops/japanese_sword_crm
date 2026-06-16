@@ -1,16 +1,26 @@
 <script setup>
 import { computed, onMounted, reactive, ref } from 'vue'
 
+// Легенда комментариев:
+// [VUE] механизм Vue, который фреймворк понимает сам.
+// [VITE] механизм Vite/dev-server.
+// [TG] объект или данные Telegram Mini App.
+// [OUR] наша переменная, функция или бизнес-логика.
+
 // VITE_API_BASE_URL позволяет указать отдельный API; по умолчанию идем через Vite proxy на /api.
+// [VITE] import.meta.env читает переменные окружения Vite.
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'
 
 // ref хранит список товаров из Django API и обновляет экран при изменении.
+// [VUE] ref делает значение реактивным; [OUR] products — наше состояние каталога.
 const products = ref([])
 
 // ref хранит локальную корзину: backend узнает о ней только при оформлении заказа.
+// [VUE] ref делает значение реактивным; [OUR] cartItems — наша локальная корзина.
 const cartItems = ref([])
 
 // reactive хранит поля формы заказа как один связанный объект.
+// [VUE] reactive делает объект формы реактивным; [OUR] customerForm — наша форма заказа.
 const customerForm = reactive({
   customer_name: '',
   telegram_username: '',
@@ -19,6 +29,7 @@ const customerForm = reactive({
 })
 
 // reactive хранит фильтры каталога, которые превращаются в query params для DRF API.
+// [VUE] reactive делает объект фильтров реактивным; [OUR] filters — наши параметры каталога.
 const filters = reactive({
   search: '',
   ordering: 'name',
@@ -34,6 +45,7 @@ const orderResult = ref(null)
 const selectedProduct = ref(null)
 
 // computed пересчитывает сумму корзины каждый раз, когда меняются товары или количество.
+// [VUE] computed создает вычисляемое значение; [OUR] cartTotal — сумма корзины.
 const cartTotal = computed(() => {
   return cartItems.value.reduce((total, item) => {
     return total + Number(item.product.sale_price) * item.quantity
@@ -41,10 +53,12 @@ const cartTotal = computed(() => {
 })
 
 // computed нужен для удобной проверки: можно ли отправлять заказ.
+// [VUE] computed пересчитывает доступность кнопки; [OUR] canSubmitOrder — наше условие отправки.
 const canSubmitOrder = computed(() => {
   return cartItems.value.length > 0 && !isSubmitting.value
 })
 
+// [VUE] onMounted запускается, когда компонент уже вставлен на страницу.
 onMounted(() => {
   initializeTelegramWebApp()
   fillTelegramCustomerFields()
@@ -56,9 +70,11 @@ function getTelegramWebApp() {
     return null
   }
 
+  // [TG] window.Telegram.WebApp существует только внутри Telegram Mini App.
   return window.Telegram?.WebApp || null
 }
 
+// [OUR] Инициализируем Telegram Mini App, если страница открыта внутри Telegram.
 function initializeTelegramWebApp() {
   const webApp = getTelegramWebApp()
 
@@ -70,14 +86,19 @@ function initializeTelegramWebApp() {
   webApp.expand()
 }
 
+// [OUR] Возвращает подписанную Telegram initData, которую backend проверит через bot token.
 function getTelegramInitData() {
+  // [TG] initData — строка user=...&auth_date=...&hash=...
   return getTelegramWebApp()?.initData || ''
 }
 
+// [OUR] Берем небезопасные данные пользователя только для автозаполнения формы.
 function getTelegramUser() {
+  // [TG] initDataUnsafe удобно читать на frontend, но backend ему не доверяет без initData.
   return getTelegramWebApp()?.initDataUnsafe?.user || null
 }
 
+// [OUR] Автозаполняет поля формы данными Telegram-пользователя.
 function fillTelegramCustomerFields() {
   const telegramUser = getTelegramUser()
 
@@ -96,11 +117,13 @@ function fillTelegramCustomerFields() {
   }
 }
 
+// [OUR] Загружает каталог товаров из Django API.
 async function loadProducts() {
   isLoading.value = true
   errorMessage.value = ''
 
   try {
+    // [PY/WEB] fetch делает HTTP GET-запрос из браузера к API.
     const response = await fetch(`${API_BASE_URL}/products/?${buildProductQuery()}`)
 
     if (!response.ok) {
@@ -116,7 +139,9 @@ async function loadProducts() {
   }
 }
 
+// [OUR] Собирает query-string для фильтров каталога.
 function buildProductQuery() {
+  // [WEB] URLSearchParams помогает собрать параметры после знака ?.
   const params = new URLSearchParams()
 
   params.set('stock', 'available')
@@ -140,6 +165,7 @@ function buildProductQuery() {
   return params.toString()
 }
 
+// [OUR] Сбрасывает фильтры каталога к значениям по умолчанию.
 function resetFilters() {
   filters.search = ''
   filters.ordering = 'name'
@@ -148,6 +174,7 @@ function resetFilters() {
   loadProducts()
 }
 
+// [OUR] Загружает detail-данные одного товара.
 async function openProductDetail(productId) {
   isDetailLoading.value = true
   errorMessage.value = ''
@@ -167,10 +194,12 @@ async function openProductDetail(productId) {
   }
 }
 
+// [OUR] Закрывает карточку товара.
 function closeProductDetail() {
   selectedProduct.value = null
 }
 
+// [OUR] Добавляет товар в локальную корзину.
 function addToCart(product) {
   orderResult.value = null
 
@@ -187,10 +216,12 @@ function addToCart(product) {
   })
 }
 
+// [OUR] Увеличивает количество товара в локальной корзине.
 function increaseQuantity(item) {
   item.quantity += 1
 }
 
+// [OUR] Уменьшает количество товара или удаляет его из корзины.
 function decreaseQuantity(item) {
   if (item.quantity === 1) {
     removeFromCart(item.product.id)
@@ -200,10 +231,12 @@ function decreaseQuantity(item) {
   item.quantity -= 1
 }
 
+// [OUR] Удаляет товар из локальной корзины.
 function removeFromCart(productId) {
   cartItems.value = cartItems.value.filter((item) => item.product.id !== productId)
 }
 
+// [OUR] Форматирует число как цену в рублях для интерфейса.
 function formatMoney(value) {
   return new Intl.NumberFormat('ru-RU', {
     style: 'currency',
@@ -212,6 +245,7 @@ function formatMoney(value) {
   }).format(Number(value))
 }
 
+// [OUR] Собирает JSON, который уйдет в POST /api/orders/.
 function buildOrderPayload() {
   const payload = {
     ...customerForm,
@@ -224,12 +258,14 @@ function buildOrderPayload() {
   const telegramInitData = getTelegramInitData()
 
   if (telegramInitData) {
+    // [TG] Это поле backend проверит в OrderCreateSerializer через parse_telegram_init_data().
     payload.telegram_init_data = telegramInitData
   }
 
   return payload
 }
 
+// [OUR] Отправляет заказ в Django API.
 async function submitOrder() {
   if (!canSubmitOrder.value) {
     return
@@ -240,6 +276,7 @@ async function submitOrder() {
   isSubmitting.value = true
 
   try {
+    // [WEB] fetch с method POST отправляет JSON заказа в backend.
     const response = await fetch(`${API_BASE_URL}/orders/`, {
       method: 'POST',
       headers: {
@@ -264,6 +301,7 @@ async function submitOrder() {
   }
 }
 
+// [OUR] Превращает разные форматы DRF-ошибок в одну строку для интерфейса.
 function formatApiError(data) {
   if (typeof data === 'string') {
     return data

@@ -10,7 +10,15 @@ from .models import Order, OrderItem
 from users.services import get_or_create_telegram_user, parse_telegram_init_data
 
 
+# Легенда комментариев:
+# [DRF] имя/метод/атрибут, который ожидает Django REST Framework.
+# [OUR] наше имя, наша переменная или наша бизнес-логика.
+# [DJANGO] механизм Django.
+# [PY] обычный Python.
+
+
 # Этот serializer описывает одну товарную строку, которую клиент отправляет в заказ.
+# [OUR] Название класса наше; [DRF] наследование от serializers.Serializer задает правила входного JSON.
 class OrderItemCreateSerializer(serializers.Serializer):
     # PrimaryKeyRelatedField принимает id товара и превращает его в объект Product.
     product = serializers.PrimaryKeyRelatedField(
@@ -20,6 +28,7 @@ class OrderItemCreateSerializer(serializers.Serializer):
     # IntegerField принимает количество товара из JSON.
     quantity = serializers.IntegerField(min_value=1)
 
+    # [DRF] validate() — специальный hook DRF: вызывается после проверки отдельных полей.
     def validate(self, attrs):
         # attrs содержит уже проверенные данные строки заказа.
         product = attrs['product']
@@ -35,6 +44,7 @@ class OrderItemCreateSerializer(serializers.Serializer):
 
 
 # Этот serializer описывает, как позиция заказа выглядит в JSON-ответе API.
+# [OUR] Название класса наше; [DRF] ModelSerializer строит JSON на основе модели OrderItem.
 class OrderItemReadSerializer(serializers.ModelSerializer):
     # source='product.sku' берет артикул из связанного товара OrderItem.product.
     sku = serializers.CharField(source='product.sku', read_only=True)
@@ -42,6 +52,7 @@ class OrderItemReadSerializer(serializers.ModelSerializer):
     # source='product.name' берет название из связанного товара OrderItem.product.
     name = serializers.CharField(source='product.name', read_only=True)
 
+    # [DRF] Meta — специальный вложенный класс, из которого DRF читает настройки serializer.
     class Meta:
         # model связывает serializer с моделью OrderItem.
         model = OrderItem
@@ -59,6 +70,7 @@ class OrderItemReadSerializer(serializers.ModelSerializer):
 
 
 # Этот serializer принимает данные клиента и список товаров для создания Order.
+# [OUR] Название класса наше; [DRF] ModelSerializer связывает JSON с моделью Order.
 class OrderCreateSerializer(serializers.ModelSerializer):
     # telegram_init_data принимает сырую подписанную строку Telegram Mini App; в модели Order такого поля нет.
     telegram_init_data = serializers.CharField(write_only=True, required=False)
@@ -68,6 +80,7 @@ class OrderCreateSerializer(serializers.ModelSerializer):
 
 
 
+    # [DRF] Meta — специальное имя: DRF сам ищет здесь model, fields и read_only_fields.
     class Meta:
         # model связывает serializer с моделью Order.
         model = Order
@@ -92,6 +105,7 @@ class OrderCreateSerializer(serializers.ModelSerializer):
             'status',
         )
 
+    # [DRF] validate_<field>() — специальный hook DRF для проверки конкретного поля items.
     def validate_items(self, items):
         # Заказ без товаров создавать нельзя.
         if not items:
@@ -99,6 +113,7 @@ class OrderCreateSerializer(serializers.ModelSerializer):
 
         return items
 
+    # [DRF] create() — специальный hook DRF: вызывается при serializer.save() для создания объекта.
     def create(self, validated_data):
         # Забираем initData отдельно, потому что у модели Order нет поля telegram_init_data.
         telegram_init_data = validated_data.pop('telegram_init_data', None)
@@ -107,16 +122,20 @@ class OrderCreateSerializer(serializers.ModelSerializer):
         items_data = validated_data.pop('items')
 
         # atomic делает создание заказа и всех позиций одной транзакцией.
+        # [DJANGO] transaction.atomic() делает создание Order и OrderItem одной транзакцией БД.
         with transaction.atomic():
             # Если frontend прислал initData, сначала проверяем подпись Telegram, потом создаем/находим User.
             if telegram_init_data:
                 try:
+                    # [OUR] parse_telegram_init_data() — наша функция проверки подписи Telegram.
                     telegram_user_data = parse_telegram_init_data(telegram_init_data)
                 except ValueError as error:
+                    # [DRF] ValidationError превратится в HTTP 400 Bad Request.
                     raise serializers.ValidationError({
                         'telegram_init_data': str(error)
                     })
 
+                # [OUR] get_or_create_telegram_user() — наша функция связи Telegram user с users.User.
                 validated_data['customer'] = get_or_create_telegram_user(telegram_user_data)
 
             order = Order.objects.create(**validated_data)
@@ -134,6 +153,7 @@ class OrderCreateSerializer(serializers.ModelSerializer):
         return order
 
 
+    # [DRF] to_representation() — специальный hook DRF: меняет JSON-ответ после создания объекта.
     def to_representation(self, instance):
         # Сначала DRF собирает обычный JSON заказа через стандартную логику ModelSerializer.
         representation = super().to_representation(instance)

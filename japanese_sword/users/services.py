@@ -10,16 +10,28 @@ from django.conf import settings
 from .models import User, UserRole
 
 
+# Легенда комментариев:
+# [PY] стандартная библиотека Python.
+# [DJANGO] механизм Django.
+# [TG] алгоритм или данные Telegram.
+# [ORM] запрос к базе через Django ORM.
+# [OUR] наша функция, переменная или бизнес-логика.
+
+
 # Эта функция проверяет initData от Telegram Mini App и возвращает данные пользователя.
+# [OUR] Django сам эту функцию не вызывает; мы вызываем ее из OrderCreateSerializer.
 def parse_telegram_init_data(init_data, max_age_seconds=86400):
     # initData — это сырая query-string строка от Telegram: user=...&auth_date=...&hash=...
+    # [TG] initData приходит из window.Telegram.WebApp.initData.
     if not init_data:
         raise ValueError('Telegram initData не передан.')
 
     # parse_qsl разбирает query-string в пары ключ-значение.
+    # [PY] parse_qsl — функция стандартной библиотеки urllib.parse.
     parsed_data = dict(parse_qsl(init_data, keep_blank_values=True))
 
     # hash — подпись Telegram, с которой мы будем сравнивать свой расчет.
+    # [OUR] received_hash — наша переменная для подписи, пришедшей от Telegram.
     received_hash = parsed_data.pop('hash', None)
 
     # Без hash мы не можем доказать, что данные пришли от Telegram.
@@ -34,16 +46,19 @@ def parse_telegram_init_data(init_data, max_age_seconds=86400):
         raise ValueError('В Telegram initData отсутствует auth_date.')
 
     # Старые initData лучше не принимать, чтобы украденная строка не работала бесконечно.
+    # [PY] time.time() возвращает текущее Unix-время.
     if int(time.time()) - int(auth_date) > max_age_seconds:
         raise ValueError('Telegram initData устарел.')
 
     # Telegram требует собрать строку из всех полей, кроме hash, отсортировав их по ключу.
+    # [TG] data_check_string собирается строго по правилам проверки Telegram Mini App.
     data_check_string = '\n'.join(
         f'{key}={value}'
         for key, value in sorted(parsed_data.items())
     )
 
     # Сначала создаем секретный ключ из bot token и константы WebAppData.
+    # [PY] hmac/hashlib считают подпись; [DJANGO] settings берет TELEGRAM_BOT_TOKEN из настроек.
     secret_key = hmac.new(
         b'WebAppData',
         settings.TELEGRAM_BOT_TOKEN.encode(),
@@ -58,6 +73,7 @@ def parse_telegram_init_data(init_data, max_age_seconds=86400):
     ).hexdigest()
 
     # compare_digest безопасно сравнивает подписи.
+    # [PY] compare_digest защищает сравнение подписей от timing-атак.
     if not hmac.compare_digest(calculated_hash, received_hash):
         raise ValueError('Telegram initData имеет неверную подпись.')
 
@@ -69,10 +85,12 @@ def parse_telegram_init_data(init_data, max_age_seconds=86400):
         raise ValueError('В Telegram initData отсутствует user.')
 
     # Превращаем JSON-строку user в обычный Python-словарь.
+    # [PY] json.loads превращает JSON-строку Telegram user в dict.
     return json.loads(user_raw)
 
 
 # Это наша обычная Python-функция: Django сам ее не вызывает, мы вызываем ее из serializer заказов.
+# [OUR] Функция связывает проверенные Telegram-данные с нашей моделью User.
 def get_or_create_telegram_user(telegram_data):
     # Telegram ID — главный стабильный идентификатор пользователя в Telegram.
     telegram_id = telegram_data.get('id')
@@ -89,6 +107,7 @@ def get_or_create_telegram_user(telegram_data):
     last_name = telegram_data.get('last_name', '')
 
     # update_or_create ищет пользователя по telegram_id; если нашел — обновляет, если не нашел — создает.
+    # [ORM] update_or_create — метод Django ORM: найти запись или создать новую.
     user, created = User.objects.update_or_create(
         telegram_id=telegram_id,
         defaults={
