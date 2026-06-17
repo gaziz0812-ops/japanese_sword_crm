@@ -4,22 +4,18 @@ from urllib.request import urlopen
 from django.conf import settings
 
 
-# Эта функция отправляет обычное текстовое сообщение через Telegram Bot API.
-def send_telegram_message(text):
-    # Если токен или chat_id не настроены, уведомление тихо пропускаем.
-    if not settings.TELEGRAM_BOT_TOKEN or not settings.TELEGRAM_ADMIN_CHAT_ID:
+# [OUR] Отправляет текстовое сообщение в конкретный Telegram chat_id.
+def send_telegram_message(chat_id, text):
+    if not settings.TELEGRAM_BOT_TOKEN or not chat_id:
         return
 
-    # urlencode безопасно превращает параметры в query string для URL.
     query = urlencode({
-        'chat_id': settings.TELEGRAM_ADMIN_CHAT_ID,
+        'chat_id': chat_id,
         'text': text,
     })
 
-    # Telegram Bot API принимает запрос sendMessage и отправляет сообщение в указанный chat_id.
     url = f'https://api.telegram.org/bot{settings.TELEGRAM_BOT_TOKEN}/sendMessage?{query}'
 
-    # urlopen делает HTTP-запрос к Telegram; timeout не дает Django зависнуть надолго.
     with urlopen(url, timeout=5) as response:
         response.read()
 
@@ -49,4 +45,20 @@ def send_new_order_notification(order):
     ])
 
     # "\n".join(lines) склеивает список строк в один текст сообщения.
-    send_telegram_message('\n'.join(lines))
+    send_telegram_message(settings.TELEGRAM_ADMIN_CHAT_ID, '\n'.join(lines))
+
+
+# [OUR] Отправляет клиенту подтверждение, если заказ связан с Telegram-пользователем.
+def send_customer_order_created_notification(order):
+    customer = order.customer
+
+    if not customer or not customer.telegram_id:
+        return
+
+    text = (
+        f'Заказ создан.\n'
+        f'Сумма: {order.total_amount} руб.\n\n'
+        'Скоро с Вами свяжусь.'
+    )
+
+    send_telegram_message(customer.telegram_id, text)

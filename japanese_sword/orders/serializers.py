@@ -3,7 +3,10 @@ from rest_framework import serializers
 
 from products.models import Product
 
-from .notifications import send_new_order_notification
+from .notifications import (
+    send_customer_order_created_notification,
+    send_new_order_notification,
+)
 from .models import Order, OrderItem
 
 # Эти сервисы проверяют Telegram initData и превращают проверенные Telegram-данные в User.
@@ -78,8 +81,6 @@ class OrderCreateSerializer(serializers.ModelSerializer):
     # items — вложенный список товаров внутри заказа.
     items = OrderItemCreateSerializer(many=True)
 
-
-
     # [DRF] Meta — специальное имя: DRF сам ищет здесь model, fields и read_only_fields.
     class Meta:
         # model связывает serializer с моделью Order.
@@ -149,9 +150,9 @@ class OrderCreateSerializer(serializers.ModelSerializer):
 
             # Уведомление отправляем после создания всех позиций, чтобы в сообщении была полная сумма заказа.
             send_new_order_notification(order)
+            send_customer_order_created_notification(order)
 
         return order
-
 
     # [DRF] to_representation() — специальный hook DRF: меняет JSON-ответ после создания объекта.
     def to_representation(self, instance):
