@@ -62,3 +62,19 @@ def send_customer_order_created_notification(order):
     )
 
     send_telegram_message(customer.telegram_id, text)
+
+
+# [OUR] Отправляет клиенту трек-номер, когда заказ переведен в статус "Отправлен".
+def send_customer_order_shipped_notification(order):
+    customer = order.customer
+
+    if not customer or not customer.telegram_id:
+        return
+
+    text = (
+        f'Заказ #{order.id} отправлен.\n'
+        f'Трек-номер: {order.tracking_number}\n\n'
+        'Спасибо за покупку!'
+    )
+
+    send_telegram_message(customer.telegram_id, text)

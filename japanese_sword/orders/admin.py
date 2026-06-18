@@ -7,6 +7,7 @@ from products.models import Product
 
 from .forms import OrderItemAdminForm
 from .models import Order, OrderItem
+from .notifications import send_customer_order_shipped_notification
 
 
 # Inline показывает позиции заказа прямо внутри страницы Order.
@@ -78,6 +79,23 @@ class OrderAdmin(admin.ModelAdmin):
             'fields': ('total_amount', 'created_at'),
         }),
     )
+
+
+    def save_model(self, request, obj, form, change):
+        old_status = None
+
+        if change:
+            old_status = (
+                Order.objects
+                .filter(pk=obj.pk)
+                .values_list('status', flat=True)
+                .first()
+            )
+
+        super().save_model(request, obj, form, change)
+
+        if old_status != Order.Status.SHIPPED and obj.status == Order.Status.SHIPPED:
+            send_customer_order_shipped_notification(obj)
 
     class Media:
         # Media подключает JS live preview только на страницах админки заказа.
