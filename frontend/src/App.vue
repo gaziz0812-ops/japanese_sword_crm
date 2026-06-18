@@ -245,6 +245,56 @@ function formatMoney(value) {
   }).format(Number(value))
 }
 
+// [OUR] Превращает введенные цифры телефона в формат +7 (999) 000-55-55.
+function formatPhoneNumber(value) {
+  let digits = value.replace(/\D/g, '')
+
+  if (digits.startsWith('8')) {
+    digits = `7${digits.slice(1)}`
+  }
+
+  if (!digits.startsWith('7')) {
+    digits = `7${digits}`
+  }
+
+  digits = digits.slice(0, 11)
+
+  const country = digits.slice(0, 1)
+  const operator = digits.slice(1, 4)
+  const firstPart = digits.slice(4, 7)
+  const secondPart = digits.slice(7, 9)
+  const thirdPart = digits.slice(9, 11)
+
+  let formattedPhone = `+${country}`
+
+  if (operator) {
+    formattedPhone += ` (${operator}`
+  }
+
+  if (operator.length === 3) {
+    formattedPhone += ')'
+  }
+
+  if (firstPart) {
+    formattedPhone += ` ${firstPart}`
+  }
+
+  if (secondPart) {
+    formattedPhone += `-${secondPart}`
+  }
+
+  if (thirdPart) {
+    formattedPhone += `-${thirdPart}`
+  }
+
+  return formattedPhone
+}
+
+// [OUR] Обрабатывает ввод телефона и сохраняет в форму уже отформатированное значение.
+function updatePhone(event) {
+  customerForm.phone = formatPhoneNumber(event.target.value)
+}
+
 // [OUR] Собирает JSON, который уйдет в POST /api/orders/.
 function buildOrderPayload() {
   const payload = {
@@ -451,7 +501,14 @@ function formatApiError(data) {
 
         <label>
           Телефон
-          <input v-model="customerForm.phone" type="tel" autocomplete="tel">
+          <input
+            :value="customerForm.phone"
+            type="tel"
+            autocomplete="tel"
+            inputmode="tel"
+            placeholder="+7 (999) 000-55-55"
+            @input="updatePhone"
+          >
         </label>
 
         <label>
