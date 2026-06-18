@@ -59,9 +59,16 @@ class Order(models.Model):
 
     def clean(self):
         super().clean()
+        sales_exist = self.pk and self.sales.exists()
+
+        # Статусы "Продажа проведена" и "Отправлен" нельзя ставить вручную без созданных продаж.
+        if self.status in (self.Status.SOLD, self.Status.SHIPPED) and not sales_exist:
+            raise ValidationError({
+                'status': 'Сначала проведите продажу через действие "Провести продажу".'
+            })
 
         # Если продажи уже проведены, заказ нельзя вернуть в рабочие/отмененные статусы.
-        if self.pk and self.sales.exists() and self.status not in (self.Status.SOLD, self.Status.SHIPPED):
+        if sales_exist and self.status not in (self.Status.SOLD, self.Status.SHIPPED):
             raise ValidationError({
                 'status': 'После проведения продажи заказ может быть только в статусе "Продажа проведена" или "Отправлен".'
             })
