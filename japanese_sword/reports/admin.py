@@ -6,6 +6,7 @@ from django.utils.dateparse import parse_date
 
 from sales.models import Sale, SaleReturn
 from orders.models import Order
+from products.models import Product
 
 # [OUR] Сохраняем стандартный метод admin.site.get_urls, чтобы не потерять обычные URL админки.
 original_get_urls = admin.site.get_urls
@@ -43,6 +44,46 @@ def sales_summary_view(request):
 
     if date_to:
         orders = orders.filter(created_at__date__lte=date_to)
+
+    # [OUR] Берем активные товары для складского блока отчета.
+    products = Product.objects.filter(is_active=True)
+
+    # [OUR] stock_balance вычисляется в Python через движения склада, поэтому собираем складскую сводку обычным циклом.
+    stock_rows = []
+    for product in products:
+        stock_balance = product.stock_balance
+        stock_rows.append({
+            'sku': product.sku,
+            'name': product.name,
+            'stock_balance': stock_balance,
+            'sale_price': product.sale_price,
+            'retail_amount': stock_balance * product.sale_price,
+        })
+
+    # [OUR] Товары без остатка нужны менеджеру как список проблемных позиций.
+    out_of_stock_products = [
+        product for product in stock_rows
+        if product['stock_balance'] <= 0
+    ]
+
+    # [OUR] Низкий остаток: товар еще есть, но скоро закончится.
+    low_stock_products = [
+        product for product in stock_rows
+        if 0 < product['stock_balance'] <= 2
+    ]
+
+    # [OUR] Итоги по складу для верхних карточек отчета.
+    stock_summary = {
+        'active_products_count': len(stock_rows),
+        'available_products_count': len([
+            product for product in stock_rows
+            if product['stock_balance'] > 0
+        ]),
+        'out_of_stock_count': len(out_of_stock_products),
+        'low_stock_count': len(low_stock_products),
+        'total_units': sum(product['stock_balance'] for product in stock_rows),
+        'retail_stock_amount': sum(product['retail_amount'] for product in stock_rows),
+    }
 
     summary = sales.aggregate(
         sales_count=Count('id'),
@@ -111,6 +152,9 @@ def sales_summary_view(request):
             'cancelled': orders_by_status.get(Order.Status.CANCELLED, 0),
         },
         'top_products': top_products,
+        'stock_summary': stock_summary,
+        'out_of_stock_products': out_of_stock_products,
+        'low_stock_products': low_stock_products,
     }
 
     return TemplateResponse(

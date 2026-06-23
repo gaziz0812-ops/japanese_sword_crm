@@ -63,6 +63,96 @@
         </div>
     </div>
 
+    <h2>Склад</h2>
+
+    <div style="display: grid; grid-template-columns: repeat(6, minmax(140px, 1fr)); gap: 16px; margin: 20px 0;">
+        <div style="padding: 16px; background: var(--darkened-bg); border-radius: 6px;">
+            <strong>Активных товаров</strong>
+            <div style="font-size: 24px;">{{ stock_summary.active_products_count }}</div>
+        </div>
+
+        <div style="padding: 16px; background: var(--darkened-bg); border-radius: 6px;">
+            <strong>В наличии</strong>
+            <div style="font-size: 24px;">{{ stock_summary.available_products_count }}</div>
+        </div>
+
+        <div style="padding: 16px; background: var(--darkened-bg); border-radius: 6px;">
+            <strong>Нет в наличии</strong>
+            <div style="font-size: 24px;">{{ stock_summary.out_of_stock_count }}</div>
+        </div>
+
+        <div style="padding: 16px; background: var(--darkened-bg); border-radius: 6px;">
+            <strong>Низкий остаток</strong>
+            <div style="font-size: 24px;">{{ stock_summary.low_stock_count }}</div>
+        </div>
+
+        <div style="padding: 16px; background: var(--darkened-bg); border-radius: 6px;">
+            <strong>Единиц на складе</strong>
+            <div style="font-size: 24px;">{{ stock_summary.total_units }}</div>
+        </div>
+
+        <div style="padding: 16px; background: var(--darkened-bg); border-radius: 6px;">
+            <strong>Розничная сумма</strong>
+            <div style="font-size: 24px;">{{ stock_summary.retail_stock_amount }} руб.</div>
+        </div>
+    </div>
+
+    <h3>Низкий остаток</h3>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Артикул</th>
+                <th>Товар</th>
+                <th>Остаток</th>
+                <th>Цена</th>
+                <th>Сумма в рознице</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for product in low_stock_products %}
+            <tr>
+                <td>{{ product.sku }}</td>
+                <td>{{ product.name }}</td>
+                <td>{{ product.stock_balance }}</td>
+                <td>{{ product.sale_price }} руб.</td>
+                <td>{{ product.retail_amount }} руб.</td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="5">Товаров с низким остатком нет.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <h3>Нет в наличии</h3>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Артикул</th>
+                <th>Товар</th>
+                <th>Остаток</th>
+                <th>Цена</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for product in out_of_stock_products %}
+            <tr>
+                <td>{{ product.sku }}</td>
+                <td>{{ product.name }}</td>
+                <td>{{ product.stock_balance }}</td>
+                <td>{{ product.sale_price }} руб.</td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="4">Все активные товары есть в наличии.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
     <h2>Продажи</h2>
 
     <div style="display: grid; grid-template-columns: repeat(7, minmax(140px, 1fr)); gap: 16px; margin: 20px 0;">
