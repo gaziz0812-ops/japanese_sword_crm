@@ -19,6 +19,30 @@
     <a href="{% url 'admin:reports_sales_summary' %}" class="button">Сбросить</a>
 </form>
 
+    <h2>Dashboard</h2>
+
+    <div style="display: grid; grid-template-columns: repeat(4, minmax(140px, 1fr)); gap: 16px; margin: 20px 0;">
+        <div style="padding: 16px; background: var(--darkened-bg); border-radius: 6px;">
+            <strong>Продаж сегодня</strong>
+            <div style="font-size: 24px;">{{ dashboard_summary.today_sales_count }}</div>
+        </div>
+
+        <div style="padding: 16px; background: var(--darkened-bg); border-radius: 6px;">
+            <strong>Прибыль сегодня</strong>
+            <div style="font-size: 24px;">{{ dashboard_summary.today_profit }} руб.</div>
+        </div>
+
+        <div style="padding: 16px; background: var(--darkened-bg); border-radius: 6px;">
+            <strong>Прибыль за 7 дней</strong>
+            <div style="font-size: 24px;">{{ dashboard_summary.week_profit }} руб.</div>
+        </div>
+
+        <div style="padding: 16px; background: var(--darkened-bg); border-radius: 6px;">
+            <strong>Новых заказов сегодня</strong>
+            <div style="font-size: 24px;">{{ dashboard_summary.today_orders_count }}</div>
+        </div>
+    </div>
+
     <h2>Заказы</h2>
 
     <div style="display: grid; grid-template-columns: repeat(4, minmax(140px, 1fr)); gap: 16px; margin: 20px 0;">

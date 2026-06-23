@@ -2,6 +2,7 @@ from django.contrib import admin
 from django.db.models import Avg, Count, Sum
 from django.template.response import TemplateResponse
 from django.urls import path
+from django.utils import timezone
 from django.utils.dateparse import parse_date
 
 from sales.models import Sale, SaleReturn
@@ -19,6 +20,12 @@ def sales_summary_view(request):
 
     date_from = parse_date(date_from_raw) if date_from_raw else None
     date_to = parse_date(date_to_raw) if date_to_raw else None
+
+    # [DJANGO] timezone.localdate() возвращает сегодняшнюю дату с учетом TIME_ZONE из settings.py.
+    today = timezone.localdate()
+
+    # [OUR] Дата начала недельного dashboard-периода: сегодня и 6 предыдущих дней.
+    week_start = today - timezone.timedelta(days=6)
 
     sales = Sale.objects.select_related('product')
 
@@ -110,6 +117,23 @@ def sales_summary_view(request):
         orders_amount=Sum('total_amount'),
     )
 
+    # [OUR] Продажи за сегодня: отдельный быстрый показатель для dashboard.
+    today_sales = Sale.objects.filter(created_at__date=today)
+
+    # [OUR] Продажи за последние 7 дней, включая сегодня.
+    week_sales = Sale.objects.filter(created_at__date__gte=week_start)
+
+    # [OUR] Заказы за сегодня: показывает свежие заявки, даже если продажа еще не проведена.
+    today_orders = Order.objects.filter(created_at__date=today)
+
+    # [OUR] Dashboard-сводка для верхнего блока отчета.
+    dashboard_summary = {
+        'today_sales_count': today_sales.count(),
+        'today_profit': today_sales.aggregate(profit=Sum('profit'))['profit'] or 0,
+        'week_profit': week_sales.aggregate(profit=Sum('profit'))['profit'] or 0,
+        'today_orders_count': today_orders.count(),
+    }
+
     top_products = (
         sales
         .values('product__sku', 'product__name')
@@ -130,6 +154,7 @@ def sales_summary_view(request):
         'title': 'Сводка продаж',
         'date_from': date_from_raw,
         'date_to': date_to_raw,
+        'dashboard_summary': dashboard_summary,
         'summary': {
             'sales_count': summary['sales_count'] or 0,
             'revenue': revenue,
