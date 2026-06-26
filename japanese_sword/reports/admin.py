@@ -1,13 +1,15 @@
 from django.contrib import admin
 from django.db.models import Avg, Count, Sum
 from django.template.response import TemplateResponse
-from django.urls import path
+from django.http import HttpResponseRedirect
+from django.urls import path, reverse
 from django.utils import timezone
 from django.utils.dateparse import parse_date
 
 from sales.models import Sale, SaleReturn
 from orders.models import Order
 from products.models import Product
+from .models import SalesSummaryReport
 
 # [OUR] Сохраняем стандартный метод admin.site.get_urls, чтобы не потерять обычные URL админки.
 original_get_urls = admin.site.get_urls
@@ -203,6 +205,29 @@ def get_reports_urls():
 
     return custom_urls + urls
 
+@admin.register(SalesSummaryReport)
+class SalesSummaryReportAdmin(admin.ModelAdmin):
+    # [OUR] Запрещаем добавление proxy-объектов: этот пункт меню нужен только как ссылка на отчет.
+    def has_add_permission(self, request):
+        return False
+
+    # [OUR] Запрещаем изменение: отчет не является обычной редактируемой таблицей.
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    # [OUR] Запрещаем удаление: удалять тут нечего, это proxy-пункт меню.
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+    # [DJANGO] changelist_view вызывается, когда пользователь кликает пункт модели в админке.
+    def changelist_view(self, request, extra_context=None):
+        return HttpResponseRedirect(
+            reverse('admin:reports_sales_summary')
+        )
 
 # [DJANGO] Подменяем get_urls у admin.site, чтобы админка знала про нашу страницу отчета.
 admin.site.get_urls = get_reports_urls
+
+# [DJANGO] index_template заменяет шаблон главной страницы админки.
+# [OUR] Через него добавим ссылку на страницу отчета.
+admin.site.index_template = 'admin/reports/index.html'
