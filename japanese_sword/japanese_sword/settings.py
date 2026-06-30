@@ -134,8 +134,23 @@ WSGI_APPLICATION = 'japanese_sword.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        # Движок БД: PostgreSQL или SQLite, значение берем из .env.
+        'ENGINE': os.environ.get('DB_ENGINE', 'django.db.backends.sqlite3'),
+
+        # Имя базы данных. Для PostgreSQL это имя БД, для SQLite - путь к файлу.
+        'NAME': os.environ.get('DB_NAME', BASE_DIR / 'db.sqlite3'),
+
+        # Пользователь PostgreSQL.
+        'USER': os.environ.get('DB_USER', ''),
+
+        # Пароль пользователя PostgreSQL.
+        'PASSWORD': os.environ.get('DB_PASSWORD', ''),
+
+        # Адрес сервера PostgreSQL.
+        'HOST': os.environ.get('DB_HOST', ''),
+
+        # Порт PostgreSQL.
+        'PORT': os.environ.get('DB_PORT', ''),
     }
 }
 

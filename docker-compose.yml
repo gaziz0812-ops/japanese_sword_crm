@@ -1,0 +1,16 @@
+services:
+  db:
+    image: postgres:16
+    container_name: japanese_sword_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: japanese_sword
+      POSTGRES_USER: japanese_sword
+      POSTGRES_PASSWORD: japanese_sword_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:
