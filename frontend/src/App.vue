@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onMounted, reactive, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
 
 // Легенда комментариев:
 // [VUE] механизм Vue, который фреймворк понимает сам.
@@ -33,6 +33,7 @@ const customerForm = reactive({
 const filters = reactive({
   search: '',
   ordering: 'name',
+  stock: 'all',
   min_price: '',
   max_price: '',
 })
@@ -45,6 +46,7 @@ const orderResult = ref(null)
 const selectedProduct = ref(null)
 const cartPanel = ref(null)
 const ordersPanel = ref(null)
+const isBackTopVisible = ref(false)
 
 // [OUR] Список заказов текущего Telegram-пользователя.
 const customerOrders = ref([])
@@ -80,6 +82,13 @@ onMounted(() => {
   fillTelegramCustomerFields()
   loadProducts()
   loadCustomerOrders()
+  updateBackTopVisibility()
+  window.addEventListener('scroll', updateBackTopVisibility)
+})
+
+// [VUE] onBeforeUnmount вызывается перед удалением компонента со страницы.
+onBeforeUnmount(() => {
+  window.removeEventListener('scroll', updateBackTopVisibility)
 })
 
 function getTelegramWebApp() {
@@ -194,7 +203,9 @@ function buildProductQuery() {
   // [WEB] URLSearchParams помогает собрать параметры после знака ?.
   const params = new URLSearchParams()
 
-  params.set('stock', 'available')
+  if (filters.stock !== 'all') {
+    params.set('stock', filters.stock)
+  }
 
   if (filters.search.trim()) {
     params.set('search', filters.search.trim())
@@ -219,6 +230,7 @@ function buildProductQuery() {
 function resetFilters() {
   filters.search = ''
   filters.ordering = 'name'
+  filters.stock = 'all'
   filters.min_price = ''
   filters.max_price = ''
   loadProducts()
@@ -299,6 +311,19 @@ function scrollToOrders() {
   ordersPanel.value?.scrollIntoView({
     behavior: 'smooth',
     block: 'start',
+  })
+}
+
+// [OUR] Показываем кнопку возврата наверх только после прокрутки страницы.
+function updateBackTopVisibility() {
+  isBackTopVisible.value = window.scrollY > 600
+}
+
+// [OUR] Возвращает пользователя в начало каталога одной кнопкой.
+function scrollToTop() {
+  window.scrollTo({
+    top: 0,
+    behavior: 'smooth',
   })
 }
 
@@ -479,6 +504,15 @@ function formatApiError(data) {
         </label>
 
         <label>
+          Наличие
+          <select v-model="filters.stock">
+            <option value="all">Все активные</option>
+            <option value="available">В наличии</option>
+            <option value="out">Нет в наличии</option>
+          </select>
+        </label>
+
+        <label>
           Цена от
           <input v-model="filters.min_price" type="number" min="0" step="1">
         </label>
@@ -514,7 +548,7 @@ function formatApiError(data) {
           <div class="product-body">
             <p class="sku">Арт. {{ product.sku }}</p>
             <h2>{{ product.name }}</h2>
-            <p class="stock">{{ product.stock_status }}</p>
+            <p class="stock" :class="{ 'stock-out': product.stock_status === 'Нет в наличии' }">{{ product.stock_status }}</p>
           </div>
 
           <div class="product-footer">
@@ -523,8 +557,13 @@ function formatApiError(data) {
               <button type="button" class="secondary-button" @click="openProductDetail(product.id)">
                 Подробнее
               </button>
-              <button type="button" class="primary-button" @click="addToCart(product)">
-                В корзину
+              <button
+                type="button"
+                class="primary-button"
+                :disabled="product.stock_status === 'Нет в наличии'"
+                @click="addToCart(product)"
+              >
+                {{ product.stock_status === 'Нет в наличии' ? 'Нет в наличии' : 'В корзину' }}
               </button>
             </div>
           </div>
@@ -679,17 +718,32 @@ function formatApiError(data) {
           <p class="sku">Арт. {{ selectedProduct.sku }}</p>
           <h2>{{ selectedProduct.name }}</h2>
           <p class="price">{{ formatMoney(selectedProduct.sale_price) }}</p>
-          <p class="stock">{{ selectedProduct.stock_status }}</p>
+          <p class="stock" :class="{ 'stock-out': selectedProduct.stock_status === 'Нет в наличии' }">{{ selectedProduct.stock_status }}</p>
           <p class="detail-description">
             {{ selectedProduct.description || 'Описание пока не заполнено.' }}
           </p>
 
-          <button type="button" class="submit-button" @click="addToCart(selectedProduct)">
-            Добавить в корзину
+          <button
+            type="button"
+            class="submit-button"
+            :disabled="selectedProduct.stock_status === 'Нет в наличии'"
+            @click="addToCart(selectedProduct)"
+          >
+            {{ selectedProduct.stock_status === 'Нет в наличии' ? 'Нет в наличии' : 'Добавить в корзину' }}
           </button>
         </template>
       </article>
     </section>
+
+    <button
+      v-if="isBackTopVisible"
+      type="button"
+      class="back-top-button"
+      aria-label="Вернуться в начало каталога"
+      @click="scrollToTop"
+    >
+      Наверх
+    </button>
 
     <button
       v-if="cartItems.length > 0"

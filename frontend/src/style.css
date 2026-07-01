@@ -110,7 +110,7 @@ h2 {
 
 .filters-panel {
   display: grid;
-  grid-template-columns: minmax(220px, 1fr) 180px 120px 120px auto;
+  grid-template-columns: minmax(220px, 1fr) 180px 150px 120px 120px auto;
   align-items: end;
   gap: 12px;
   margin-bottom: 24px;
@@ -198,6 +198,10 @@ h2 {
 .stock {
   color: #166534;
   font-weight: 700;
+}
+
+.stock-out {
+  color: #b91c1c;
 }
 
 .product-footer {
@@ -501,6 +505,20 @@ h2 {
   white-space: pre-line;
 }
 
+.back-top-button {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  z-index: 8;
+  padding: 11px 14px;
+  color: #ffffff;
+  font-weight: 800;
+  background: #18181b;
+  border: 0;
+  border-radius: 8px;
+  box-shadow: 0 14px 30px rgba(24, 24, 27, 0.22);
+}
+
 .floating-cart-button {
   display: none;
 }
@@ -559,6 +577,11 @@ h2 {
     min-height: auto;
     border-top: 1px solid #e7e5e4;
     border-left: 0;
+  }
+
+  .back-top-button {
+    right: 16px;
+    bottom: 84px;
   }
 
   .floating-cart-button {
