@@ -1,8 +1,12 @@
+import logging
 from urllib.parse import urlencode
 from urllib.request import urlopen
 from urllib.error import URLError
 
 from django.conf import settings
+
+
+logger = logging.getLogger(__name__)
 
 
 
@@ -21,7 +25,8 @@ def send_telegram_message(chat_id, text):
     try:
         with urlopen(url, timeout=5) as response:
             response.read()
-    except URLError:
+    except (URLError, TimeoutError, OSError) as error:
+        logger.warning('Telegram notification was not sent: %s', error)
         return
 
 

@@ -48,7 +48,7 @@ class ProductAdmin(admin.ModelAdmin):
     form = ProductAdminForm
 
     # list_display определяет колонки в списке товаров админки.
-    list_display = ('id', 'sku', 'name', 'manufacturer', 'sale_price', 'is_active', 'display_stock_balance')
+    list_display = ('id', 'sku', 'name', 'manufacturer', 'old_price', 'sale_price', 'is_active', 'display_stock_balance')
 
     # list_filter добавляет боковые фильтры в админке.
     list_filter = ('is_active', 'manufacturer')
@@ -58,7 +58,7 @@ class ProductAdmin(admin.ModelAdmin):
 
     fieldsets = (
         ('Товар', {
-            'fields': ('sku', 'name', 'manufacturer', 'description', 'image', 'sale_price', 'is_active'),
+            'fields': ('sku', 'name', 'manufacturer', 'description', 'image', 'old_price', 'sale_price', 'is_active'),
         }),
         ('Галерея', {
             'fields': ('gallery_upload',),

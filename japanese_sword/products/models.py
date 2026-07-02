@@ -16,6 +16,7 @@ class Product(models.Model):
     )
     description = models.TextField('Описание', blank=True)
     image = models.ImageField('Фото', upload_to='products/', blank=True, null=True)
+    old_price = models.DecimalField('Старая цена, руб.', max_digits=10, decimal_places=2, blank=True, null=True)
     sale_price = models.DecimalField('Цена, руб.', max_digits=10, decimal_places=2)
     is_active = models.BooleanField('Активен', default=True)
 

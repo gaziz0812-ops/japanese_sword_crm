@@ -148,9 +148,9 @@ class OrderCreateSerializer(serializers.ModelSerializer):
                     quantity=item_data['quantity'],
                 )
 
-            # Уведомление отправляем после создания всех позиций, чтобы в сообщении была полная сумма заказа.
-            send_new_order_notification(order)
-            send_customer_order_created_notification(order)
+            # [DJANGO] on_commit запускает уведомления только после успешного сохранения заказа в БД.
+            transaction.on_commit(lambda: send_new_order_notification(order))
+            transaction.on_commit(lambda: send_customer_order_created_notification(order))
 
         return order
 

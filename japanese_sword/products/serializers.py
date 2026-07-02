@@ -56,6 +56,7 @@ class ProductSerializer(serializers.ModelSerializer):
             'id',
             'sku',
             'name',
+            'old_price',
             'sale_price',
             'stock_status',
             # [OUR] Числовой остаток нужен frontend, чтобы не дать положить в корзину больше наличия.

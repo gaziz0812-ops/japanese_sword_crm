@@ -392,6 +392,11 @@ function formatMoney(value) {
   }).format(Number(value))
 }
 
+// [OUR] Старую цену показываем только если она заполнена и больше текущей цены.
+function hasOldPrice(product) {
+  return Number(product.old_price || 0) > Number(product.sale_price)
+}
+
 // [OUR] Превращает введенные цифры телефона в формат +7 (999) 000-55-55.
 function formatPhoneNumber(value) {
   let digits = value.replace(/\D/g, '')
@@ -607,7 +612,10 @@ function formatApiError(data) {
           </div>
 
           <div class="product-footer">
-            <p class="price">{{ formatMoney(product.sale_price) }}</p>
+            <div class="price-block">
+              <span v-if="hasOldPrice(product)" class="old-price">{{ formatMoney(product.old_price) }}</span>
+              <p class="price">{{ formatMoney(product.sale_price) }}</p>
+            </div>
             <div class="product-actions">
               <button type="button" class="secondary-button" @click="openProductDetail(product.id)">
                 Подробнее
@@ -771,7 +779,10 @@ function formatApiError(data) {
 
           <p class="sku">Арт. {{ selectedProduct.sku }}</p>
           <h2>{{ selectedProduct.name }}</h2>
-          <p class="price">{{ formatMoney(selectedProduct.sale_price) }}</p>
+          <div class="price-block">
+            <span v-if="hasOldPrice(selectedProduct)" class="old-price">{{ formatMoney(selectedProduct.old_price) }}</span>
+            <p class="price">{{ formatMoney(selectedProduct.sale_price) }}</p>
+          </div>
           <p class="stock" :class="{ 'stock-out': selectedProduct.stock_status === 'Нет в наличии' }">{{ selectedProduct.stock_status }}</p>
           <p class="detail-description">
             {{ selectedProduct.description || 'Описание пока не заполнено.' }}

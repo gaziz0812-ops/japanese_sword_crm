@@ -213,6 +213,18 @@ h2 {
   border-top: 1px solid #f1f1f0;
 }
 
+.price-block {
+  display: grid;
+  gap: 3px;
+}
+
+.old-price {
+  color: #a8a29e;
+  font-size: 14px;
+  font-weight: 700;
+  text-decoration: line-through;
+}
+
 .price {
   font-size: 18px;
   font-weight: 800;
