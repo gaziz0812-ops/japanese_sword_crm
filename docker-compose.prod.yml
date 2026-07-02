@@ -34,6 +34,7 @@ services:
       - .env
     depends_on:
       - backend
+    network_mode: host
     command: python -m telegram_bot.main
     working_dir: /app/japanese_sword
 
