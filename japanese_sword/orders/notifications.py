@@ -1,7 +1,9 @@
 from urllib.parse import urlencode
 from urllib.request import urlopen
+from urllib.error import URLError
 
 from django.conf import settings
+
 
 
 # [OUR] Отправляет текстовое сообщение в конкретный Telegram chat_id.
@@ -16,8 +18,11 @@ def send_telegram_message(chat_id, text):
 
     url = f'https://api.telegram.org/bot{settings.TELEGRAM_BOT_TOKEN}/sendMessage?{query}'
 
-    with urlopen(url, timeout=5) as response:
-        response.read()
+    try:
+        with urlopen(url, timeout=5) as response:
+            response.read()
+    except URLError:
+        return
 
 
 # Эта функция собирает текст уведомления о новом заказе.
