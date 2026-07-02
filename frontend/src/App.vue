@@ -491,7 +491,6 @@ async function submitOrder() {
     orderResult.value = data
     cartItems.value = []
     customerForm.customer_comment = ''
-    loadCustomerOrders()
   } catch (error) {
     errorMessage.value = error.message
   } finally {
