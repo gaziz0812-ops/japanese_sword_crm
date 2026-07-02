@@ -478,6 +478,9 @@ h2 {
 }
 
 .detail-close {
+  position: sticky;
+  top: 0;
+  z-index: 1;
   justify-self: end;
   padding: 8px 10px;
   color: #57534e;

@@ -11,6 +11,14 @@ import { computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
 // [VITE] import.meta.env читает переменные окружения Vite.
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'
 
+// [OUR] Собирает URL API в одном месте, чтобы не ловить кривые адреса при смене окружения.
+function buildApiUrl(path) {
+  const normalizedBaseUrl = API_BASE_URL.replace(/\/$/, '')
+  const normalizedPath = path.startsWith('/') ? path : `/${path}`
+
+  return `${normalizedBaseUrl}${normalizedPath}`
+}
+
 // ref хранит список товаров из Django API и обновляет экран при изменении.
 // [VUE] ref делает значение реактивным; [OUR] products — наше состояние каталога.
 const products = ref([])
@@ -150,7 +158,7 @@ async function loadProducts() {
 
   try {
     // [PY/WEB] fetch делает HTTP GET-запрос из браузера к API.
-    const response = await fetch(`${API_BASE_URL}/products/?${buildProductQuery()}`)
+    const response = await fetch(buildApiUrl(`/products/?${buildProductQuery()}`))
 
     if (!response.ok) {
       throw new Error('Не удалось загрузить каталог')
@@ -180,7 +188,7 @@ async function loadCustomerOrders() {
   try {
     // [WEB] GET-запрос к backend: просим вернуть только заказы текущего Telegram-пользователя.
     const response = await fetch(
-      `${API_BASE_URL}/orders/my/?telegram_init_data=${encodeURIComponent(telegramInitData)}`,
+      buildApiUrl(`/orders/my/?telegram_init_data=${encodeURIComponent(telegramInitData)}`),
     )
 
     const data = await response.json()
@@ -242,7 +250,7 @@ async function openProductDetail(productId) {
   errorMessage.value = ''
 
   try {
-    const response = await fetch(`${API_BASE_URL}/products/${productId}/`)
+    const response = await fetch(buildApiUrl(`/products/${productId}/`))
 
     if (!response.ok) {
       throw new Error('Не удалось загрузить карточку товара')
@@ -261,14 +269,51 @@ function closeProductDetail() {
   selectedProduct.value = null
 }
 
+// [OUR] Возвращает числовой остаток товара, который приходит из Product.stock_balance в API.
+function getProductStock(product) {
+  return Number(product.stock_balance || 0)
+}
+
+// [OUR] Смотрим, сколько конкретного товара уже лежит в локальной корзине.
+function getCartProductQuantity(productId) {
+  return cartItems.value.find((item) => item.product.id === productId)?.quantity || 0
+}
+
+// [OUR] Проверка для кнопок: товар можно добавить, пока в корзине меньше штук, чем есть на складе.
+function canAddToCart(product) {
+  return getCartProductQuantity(product.id) < getProductStock(product)
+}
+
+// [OUR] Текст кнопки зависит от реального числового остатка, а не только от красивой фразы stock_status.
+function getCartButtonText(product, defaultText = 'В корзину') {
+  if (getProductStock(product) <= 0) {
+    return 'Нет в наличии'
+  }
+
+  if (!canAddToCart(product)) {
+    return 'В корзине всё наличие'
+  }
+
+  return defaultText
+}
+
 // [OUR] Добавляет товар в локальную корзину.
-function addToCart(product) {
+function addToCart(product, options = {}) {
   orderResult.value = null
+  errorMessage.value = ''
+
+  if (!canAddToCart(product)) {
+    errorMessage.value = `В наличии только ${getProductStock(product)} шт.`
+    return
+  }
 
   const existingItem = cartItems.value.find((item) => item.product.id === product.id)
 
   if (existingItem) {
     existingItem.quantity += 1
+    if (options.closeDetail) {
+      closeProductDetail()
+    }
     return
   }
 
@@ -276,10 +321,21 @@ function addToCart(product) {
     product,
     quantity: 1,
   })
+
+  if (options.closeDetail) {
+    closeProductDetail()
+  }
 }
 
 // [OUR] Увеличивает количество товара в локальной корзине.
 function increaseQuantity(item) {
+  errorMessage.value = ''
+
+  if (!canAddToCart(item.product)) {
+    errorMessage.value = `В наличии только ${getProductStock(item.product)} шт.`
+    return
+  }
+
   item.quantity += 1
 }
 
@@ -418,7 +474,7 @@ async function submitOrder() {
 
   try {
     // [WEB] fetch с method POST отправляет JSON заказа в backend.
-    const response = await fetch(`${API_BASE_URL}/orders/`, {
+    const response = await fetch(buildApiUrl('/orders/'), {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -560,10 +616,10 @@ function formatApiError(data) {
               <button
                 type="button"
                 class="primary-button"
-                :disabled="product.stock_status === 'Нет в наличии'"
+                :disabled="!canAddToCart(product)"
                 @click="addToCart(product)"
               >
-                {{ product.stock_status === 'Нет в наличии' ? 'Нет в наличии' : 'В корзину' }}
+                {{ getCartButtonText(product) }}
               </button>
             </div>
           </div>
@@ -625,9 +681,8 @@ function formatApiError(data) {
           Телефон
           <input
             :value="customerForm.phone"
-            type="tel"
+            type="text"
             autocomplete="tel"
-            inputmode="tel"
             placeholder="+7 (999) 000-55-55"
             @input="updatePhone"
           >
@@ -726,10 +781,10 @@ function formatApiError(data) {
           <button
             type="button"
             class="submit-button"
-            :disabled="selectedProduct.stock_status === 'Нет в наличии'"
-            @click="addToCart(selectedProduct)"
+            :disabled="!canAddToCart(selectedProduct)"
+            @click="addToCart(selectedProduct, { closeDetail: true })"
           >
-            {{ selectedProduct.stock_status === 'Нет в наличии' ? 'Нет в наличии' : 'Добавить в корзину' }}
+            {{ getCartButtonText(selectedProduct, 'Добавить в корзину') }}
           </button>
         </template>
       </article>
